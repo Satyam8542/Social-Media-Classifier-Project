@@ -1,0 +1,138 @@
+##Python file
+
+from flask import Flask, request, render_template
+import string
+
+app = Flask(__name__)
+
+# Define the categories and associated keywords
+categories = {
+    "informative": ["news", "update", "information", "report", "discovered", "breaking"],
+    "promotional": ["sale", "discount", "offer", "buy", "purchase", "deal", "product", "limited"],
+    "personal": ["family", "friends", "birthday", "party", "enjoyed", "celebrated", "happy", "sad", "today", "went", "had"]
+}
+
+# Function to preprocess the text
+def preprocess_text(text):
+    # Convert text to lowercase
+    text = text.lower()
+    # Remove punctuation
+    text = text.translate(str.maketrans('', '', string.punctuation))
+    # Tokenize the text
+    tokens = text.split()
+    return tokens
+
+# Function to classify the post based on keywords
+def classify_post(post, categories):
+    tokens = preprocess_text(post)
+    
+    category_scores = {category: 0 for category in categories}
+    
+    for token in tokens:
+        for category, keywords in categories.items():
+            if token in keywords:
+                category_scores[category] += 1
+    
+    # Determine the category with the highest score
+    classified_category = max(category_scores, key=category_scores.get)
+    
+    return classified_category
+
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        post = request.form['post']
+        category = classify_post(post, categories)
+        return render_template('index.html', post=post, category=category)
+    return render_template('index.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+
+##HTML file
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Media Post Classifier</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Social Media Post Classifier</h1>
+        <form method="POST">
+            <textarea name="post" placeholder="Enter your social media post here..."></textarea>
+            <button type="submit">Classify Post</button>
+        </form>
+        {% if post and category %}
+            <div class="result">
+                <h2>Post:</h2>
+                <p>{{ post }}</p>
+                <h2>Classified as:</h2>
+                <p>{{ category }}</p>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
+
+##CSS FILE
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    background: white;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    width: 400px;
+    text-align: center;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+textarea {
+    width: 100%;
+    height: 100px;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    background: #007BFF;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+.result {
+    margin-top: 20px;
+    text-align: left;
+}
+
+.result h2 {
+    margin-bottom: 5px;
+}
